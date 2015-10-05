@@ -1,3 +1,11 @@
+/*
+ *  TODO: investigate why hrtimer_get_res is broken on Linux 4.2,
+ *  fix the module accordignly.
+ *
+*/
+
+
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -5,7 +13,8 @@
 #include <linux/jiffies.h>
 #include <linux/time.h>
 #include <linux/hrtimer.h>
-
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
 
 static unsigned int gpio_led = 18;
 
@@ -23,6 +32,34 @@ MODULE_PARM_DESC(period_ms, "Blink duration");
 module_param(gpio_led, uint, 0000);
 MODULE_PARM_DESC(gpio_led, "led GPIO pin");
 
+
+static ssize_t period_show(struct kobject *kobj, struct kobj_attribute *attr,
+		      char *buf)
+{
+	return sprintf(buf, "%lu\n", period_ms);
+}
+
+static ssize_t period_store(struct kobject *kobj, struct kobj_attribute *attr,
+		       const char *buf, size_t count)
+{
+	sscanf(buf, "%lu", &period_ms);
+	period_ns = period_ms*((unsigned long)1E6L);
+	ktime_period_ns = ktime_set(0, period_ns);
+	return count;
+}
+
+
+static struct kobj_attribute period_attribute =
+	__ATTR(period, 0664, period_show, period_store);
+
+static struct attribute *attrs[] = {
+	&period_attribute.attr,
+	NULL,
+};
+
+static struct attribute_group attr_group = {
+	.attrs = attrs,
+};
 
 static enum hrtimer_restart led_blink_function(struct hrtimer *timer)
 {
@@ -47,6 +84,16 @@ static int __init blink_init(void)
 	int retval = 0;
 	int dir_err;
 	struct timespec tp_hr_res;
+
+	example_kobj = kobject_create_and_add("simple_blinker", kernel_kobj);
+	if (!example_kobj) {
+		retval = -ENOMEM;
+		goto fail;
+	}	
+
+	retval = sysfs_create_group(example_kobj, &attr_group);
+	if (retval)
+		goto fail1;
 
 	if (!gpio_is_valid(gpio_led)) {
 		pr_alert("The requested GPIO is not available\n");
@@ -78,6 +125,8 @@ static int __init blink_init(void)
 	goto fail;
 fail2:
 	gpio_free(gpio_led);
+fail1:
+	kobject_put(example_kobj);
 fail:
 	return retval;
 }
