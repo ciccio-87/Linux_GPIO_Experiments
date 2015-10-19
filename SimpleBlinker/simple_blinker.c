@@ -1,11 +1,3 @@
-/*
- *  TODO: investigate why hrtimer_get_res is broken on Linux 4.2,
- *  fix the module accordignly.
- *
-*/
-
-
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -83,7 +75,7 @@ static int __init blink_init(void)
 
 	int retval = 0;
 	int dir_err;
-	struct timespec tp_hr_res;
+	/*struct timespec tp_hr_res;*/
 
 	example_kobj = kobject_create_and_add("simple_blinker", kernel_kobj);
 	if (!example_kobj) {
@@ -113,7 +105,7 @@ static int __init blink_init(void)
 	}
 
 
-	hrtimer_get_res(CLOCK_MONOTONIC, &tp_hr_res);
+	/*hrtimer_get_res(CLOCK_MONOTONIC, &tp_hr_res);*/
 
 
 	hrtimer_init(&my_hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);

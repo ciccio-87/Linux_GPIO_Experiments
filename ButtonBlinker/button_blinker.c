@@ -62,7 +62,7 @@ irqreturn_t change_state_interrupt(int irq,
 
 static void manage_timer(struct work_struct *work)
 {
-	struct timespec tp_hr_res;
+	/*struct timespec tp_hr_res;*/
 
 	index = (index + 1) % 6;
 	pr_info("ControlBlink: passing to %i period\n", periods[index]);
@@ -74,7 +74,7 @@ static void manage_timer(struct work_struct *work)
 	}
 
 	period_ms = periods[index];
-	hrtimer_get_res(CLOCK_MONOTONIC, &tp_hr_res);
+	/*hrtimer_get_res(CLOCK_MONOTONIC, &tp_hr_res);*/
 
 	hrtimer_init(&my_hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	my_hrtimer.function = &led_blink_function;
